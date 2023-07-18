@@ -1,6 +1,6 @@
 # polaris
 ## _Path Reporting for Borrowed Goods_
-
+_Currently in Pre-Pre-Alpha_
 ## Installation
 ### Necessary Software
 - [Golang][go]
