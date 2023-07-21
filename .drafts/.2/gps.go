@@ -1,27 +1,21 @@
 // =============================================================================
 // Auth: Alex Celani
 // File: gsp.go
-// Revn: 07-13-2023  0.4
+// Revn: 07-18-2023  2.0
 // Func: asynchronously receive messages from another program, print
 //
 // TODO: create
 // =============================================================================
 // CHANGE LOG
 // -----------------------------------------------------------------------------
-// 05-04-2022: init
-// 05-09-2022: began commenting
-// 05-10-2022: finished commenting
-//             added alter() and forward()
-//             made passed value to alter()/forward() a slice
-//             changed refs to recv byte array to slice of n bytes
-// 07-13-2023: copied over, removed call to alter()/forward()
+//*07-13-2023: copied over, removed call to alter()/forward()
 //             removed any call to write
 //             put read and print in a for loop
 //             wrote getFileName() to create a filename based off
 //              current time
 //             write output to a logfile
 //             moved file writing to AFTER checking for fin
-//
+//*07-20-2023: 
 // =============================================================================
 
 package main
@@ -32,7 +26,7 @@ import (
     "os"        // Args, Stderr, Exit, Create, Write
     "fmt"       // Fprintf, Println
     "strings"   // ToLower, Compare
-    "time"      // Now, Year, Month, Day, Hour, Minute, Second
+    "time"      // Now, Format
 )
 
 
@@ -59,11 +53,6 @@ func getFileName() string{
 // function to handle incoming connections
 func handleClient( conn net.Conn ) {
     defer conn.Close()  // barring any error, still close connection
-
-    filename := getFileName()   // get filename
-    file, err := os.Create( filename )  // create new file
-    check( err )    // make sure it worked
-
     defer file.Close()  // barring any error, still close connection
 
     var buf [512]byte   // declare large byte array, store messages
@@ -82,6 +71,7 @@ func handleClient( conn net.Conn ) {
 
         // if recv'd message is fin, break forloop
         if strings.Compare( string( buf[:n] ), "fin" ) == 0 {
+            file.Close()
             os.Exit( 2 )        // quit
         }
 
@@ -105,6 +95,10 @@ func handleClient( conn net.Conn ) {
 }
 
 
+var file *os.File
+var filename string
+
+
 func main() {
 
     // ip:port
@@ -118,6 +112,7 @@ func main() {
     // bind and "listen" to ip and port, according to tcp rules
     listener, err := net.ListenTCP( "tcp", tcpAddr )
     check( err )    // check error
+
 
     // iterate forever
     // TODO i mean i can totally make this more user friendly

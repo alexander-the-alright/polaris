@@ -1,20 +1,14 @@
 // =============================================================================
 // Auth: Alex Celani
 // File: gsp.go
-// Revn: 07-13-2023  0.4
+// Revn: 07-13-2023  1.0
 // Func: asynchronously receive messages from another program, print
 //
 // TODO: create
 // =============================================================================
 // CHANGE LOG
 // -----------------------------------------------------------------------------
-// 05-04-2022: init
-// 05-09-2022: began commenting
-// 05-10-2022: finished commenting
-//             added alter() and forward()
-//             made passed value to alter()/forward() a slice
-//             changed refs to recv byte array to slice of n bytes
-// 07-13-2023: copied over, removed call to alter()/forward()
+//*07-13-2023: copied over, removed call to alter()/forward()
 //             removed any call to write
 //             put read and print in a for loop
 //             wrote getFileName() to create a filename based off
@@ -32,7 +26,7 @@ import (
     "os"        // Args, Stderr, Exit, Create, Write
     "fmt"       // Fprintf, Println
     "strings"   // ToLower, Compare
-    "time"      // Now, Year, Month, Day, Hour, Minute, Second
+    "time"      // Now, Format
 )
 
 
