@@ -1,7 +1,7 @@
 // =============================================================================
 // Auth: Alex Celani
 // File: gsp.go
-// Revn: 07-18-2023  2.0
+// Revn: 07-20-2023  2.0
 // Func: asynchronously receive messages from another program, print
 //
 // TODO: create
@@ -15,7 +15,8 @@
 //              current time
 //             write output to a logfile
 //             moved file writing to AFTER checking for fin
-//*07-20-2023: 
+//*07-20-2023: added calls to os.Create(), file.Write(), etc
+//
 // =============================================================================
 
 package main

@@ -1,38 +1,39 @@
 // =============================================================================
 // Auth: Alex Celani
-// File: gsp.go
-// Revn: 07-13-2023  0.4
+// File: gps.go
+// Revn: 07-25-2023  3.0
 // Func: asynchronously receive messages from another program, print
 //
-// TODO: create
+// TODO: add LED
+//       add flags
 // =============================================================================
 // CHANGE LOG
 // -----------------------------------------------------------------------------
-// 05-04-2022: init
-// 05-09-2022: began commenting
-// 05-10-2022: finished commenting
-//             added alter() and forward()
-//             made passed value to alter()/forward() a slice
-//             changed refs to recv byte array to slice of n bytes
-// 07-13-2023: copied over, removed call to alter()/forward()
+//*07-13-2023: copied over, removed call to alter()/forward()
 //             removed any call to write
 //             put read and print in a for loop
 //             wrote getFileName() to create a filename based off
 //              current time
 //             write output to a logfile
 //             moved file writing to AFTER checking for fin
+//*07-20-2023: added calls to os.Create(), file.Write(), etc
+// 07-21-2023: tested filewriting stuff, no avail
+// 07-24-2023: added bufio import and buffered file writing
+//*07-25-2023: commented bufio stuffs
 //
 // =============================================================================
 
 package main
 
 import ( 
+    "bufio"     // NewWriter, Write, Writer.Flush
     "net"       // ResolveTCPAddr, conn.Write,Read,Close
                 // ListenTCP, listener.Accept
-    "os"        // Args, Stderr, Exit, Create, Write
+    "os"        // Args, Stderr, Exit, Create, Write, Close,
+                // WriteString
     "fmt"       // Fprintf, Println
     "strings"   // ToLower, Compare
-    "time"      // Now, Year, Month, Day, Hour, Minute, Second
+    "time"      // Now, Format
 )
 
 
@@ -52,20 +53,20 @@ func getFileName() string{
     t := time.Now()
     // format as YYYYMMDDHHmmss.gps
     return t.Format( "20060102150405" ) + ".gps"
-    //return name + // return name
 }
 
 
 // function to handle incoming connections
 func handleClient( conn net.Conn ) {
     defer conn.Close()  // barring any error, still close connection
-//    defer file.Close()  // barring any error, still close connection
 
     var buf [512]byte   // declare large byte array, store messages
 
+// debug printing stuff
+//    fmt.Println( "handling" )
+
     // iterate forever to always read over connection
     for {
-        //defer file.Close()
         // read n bytes from connection into buffer
         n, err := conn.Read( buf[0:] )
         if err != nil { // erroring on read will simply leave the 
@@ -74,56 +75,40 @@ func handleClient( conn net.Conn ) {
 
         // print recv'd message
         // string() only works on byte SLICES so [:] is required
-        fmt.Println( "recv: ", string( buf[:n] ) )
+        // debug print
+//        fmt.Println( "recv: ", string( buf[:n] ) )
 
-        // if recv'd message is start, create and open file
+        // essentially a case statement for conn.Read, Compare makes
+        // it hard to do that
+        // check to see if buf[:n] is start
         if strings.Compare( string( buf[:n] ), "start" ) == 0 {
-            filename := getFileName()   // get filename
-            file, err = os.Create( filename )  // create new file
-            check( err )    // make sure it worked
-            defer file.Close()
-            open = true
-            break
-        }
-
-        if !open {
-            break
-        }
-
-        // if recv'd message is fin, break forloop
-        if strings.Compare( string( buf[:n] ), "fin" ) == 0 {
-            file.Close()
+            filename := getFileName()   // get name of file
+            file, err = os.Create( filename )   // create new file
+            check( err )    // make sure file creation worked
+            writer = bufio.NewWriter( file )    // create filewriter
+        // check to see if buf[:n] is fin
+        } else if strings.Compare( string( buf[:n] ), "fin" ) == 0 {
+            // debug print
+//            fmt.Println( "premature file closing" )
+            file.Close()    // close file
+            // possibly strike exit...
             os.Exit( 2 )        // quit
+        // if conn.Read is not start or fin, it's data
+        } else {
+            // write info to file
+            _, err = writer.Write( buf[:n] )            
+            check( err )            // make sure write worked
+            err = writer.Flush()    // flush write to file
+            check( err )            // make sure write worked
+            // debug print
+//            fmt.Println( "writing" )
         }
-
-        file, err = os.OpenFile( filename, os.O_WRONLY, 0644 )
-        check( err )
-        // write info to file
-        _, err = file.Write( buf[:n] )
-        check( err )    // make sure write worked
-        // write newline
-        _, err = file.WriteString( "\n" )
-        check( err )    // make sure write worked
-
-        file.Sync()
-
-        file.Close()
-        /*
-        // write that response back to original client
-        _, err = conn.Write( []byte( send ) )
-        if err != nil { // erroring on write will simply leave the
-            return      // function so it can start again later
-        }
-        */
-
-        //fmt.Println( "sent: ", send )   // print response
     }
 }
 
 
 var file *os.File
-var filename string
-var open bool
+var writer *bufio.Writer
 
 
 func main() {
