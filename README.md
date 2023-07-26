@@ -4,7 +4,9 @@ _Currently in Pre-Pre-Alpha_
 ## Installation
 ### Necessary Software
 - [Golang][go]
-- [Arduino IDE][ard] and [ESP plugin][esp]
+- [Arduino IDE][ard]
+  - [ESP plugin][esp] ()
+  - [TinyGPS++][tg+] library (Installing the TinyGPS++ Library section)
 
 ### Necessary Hardware
 - Computer (I used a [Raspberry Pi Zero 2 W][vilros])
@@ -30,7 +32,7 @@ Run the recipient with
 ```
 When the path is received, it will be stored in a file named with the received date. It can be viewed with
 ```sh
-cat YYYYMMDD.path
+cat YYYYMMDDHHmmss.gps
 ```
 ### Nodeside
 Compile and download the sketch to the ESP
@@ -40,15 +42,17 @@ Connect the ESP and GPS to the external battery. Once the GPS warms up, it will 
 
 ## TODO
 - A whole lot
-- Golang write to file
 - Golang plotting
-- ESP connectivity
 - ESP write to EEPROM
+- Solve the Power Problem
+- Solve the Housing Problem
+- Solve the Attachment Problem
 
 
    [go]: <https://go.dev/doc/install>
    [ard]: <https://www.arduino.cc/en/software>
    [esp]: <https://randomnerdtutorials.com/how-to-install-esp8266-board-arduino-ide/>
+   [tg+]: <https://randomnerdtutorials.com/guide-to-neo-6m-gps-module-with-arduino/>
    [vilros]: <https://www.amazon.com/Vilros-Raspberry-Kit-Premium-Essential-Accessories/dp/B0748M1Z1B>
    [espbuy]: <https://www.amazon.com/HiLetgo-Internet-Development-Wireless-Micropython/dp/B081CSJV2V>
    [gps]: <https://www.amazon.com/HiLetgo-GY-NEO6MV2-Controller-Ceramic-Antenna/dp/B01D1D0F5M>
