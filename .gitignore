@@ -1,3 +1,5 @@
-.gitignore
+# ignore binaries 
 *.out
-*/data/*
+# ignore stored data, saved gps files
+*.gps
+
