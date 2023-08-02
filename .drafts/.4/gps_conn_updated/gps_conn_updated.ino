@@ -1,20 +1,26 @@
 // ===================================================================
 // Auth: alex
-// File: gps_conn.ino
-// Revn: 07-20-2023  1.0
+// File: gps_conn_updated.ino
+// Revn: 08-01-2023  2.0
 // Func: connect GPS module to Golang's net.Conn via ESP8266
 //
 // TODO: first loop static bool to distinguish between case 0 and 1
 //       store data in EEPROM, retrieve it after power failure
-//       entirely ignore 0's, maybe trigger LED on 0's?
 // ===================================================================
 // CHANGE LOG
 // -------------------------------------------------------------------
 //*07-20-2023: ac copied from gps_conn.ino
 //                added switch/case 
+// 07-25-2023: ac changed start/fin to ot/za
+//                gutted client timeout block, already commented
+//                added EEPROM.h
+//                removed code block that closes client connection
+// 07-27-2023: ac added spin loop to spin until location is updated
+//                  (very broken)
+//*08-01-2023: ac removed spin loop, added isUpdated() condition to
+//                  client sending block
 //
 // ===================================================================
-
 
 
 #include <ESP8266WiFi.h>                  // Special Wifi Library
@@ -22,12 +28,15 @@
 // Software Serial Library so we can use other Pins for communication
 // with the GPS module
 #include <SoftwareSerial.h>
+#include "EEPROM.h"
+
 
 // wifi credentials
 #ifndef STASSID
 #define STASSID "kaer morhen"
 #define STAPSK "project:sentinel"
 #endif
+
 
 // set ESP Rx to GPIO 12 (connect to Ublox Tx),
 // Tx to GPIO 13 (connect to Ublox Rx)
@@ -46,6 +55,7 @@ const unsigned char host[4] = { 192, 168, 1, 120 };
 //const char* host = "xyz.xyz.xyz.xyz";
 const uint16_t port = 1202;
 
+// literally keep track of how many messages have been sent
 int count = 0;
 
 // Create an Instance of the TinyGPS++ object called gps
@@ -96,59 +106,48 @@ void loop() {
   if (!client.connect(host, port)) {
     Serial.println("connection failed");
     delay(5000);
-    return;
+    //return;
   }
 
-/*
-  // wait for data to be available
-  unsigned long timeout = millis();
-  while (client.available() == 0) {
-    if (millis() - timeout > 5000) {
-      Serial.println(">>> Client Timeout !");
-      client.stop();
-      delay(60000);
-      return;
-    }
-  }
-*/
+  Serial.print( "isUpdated: " );
+  Serial.println( gps.location.isUpdated() );
+  Serial.print( "isValid: " );
+  Serial.println( gps.location.isValid() );
+  delay( 1000 * 30 );
+  //     1000 milliseconds in one second
+  //            30 seconds in one-half minute
+  // }
 
   // This will send gps info
   Serial.println("sending gps data");
-  if (client.connected()) {
+  // only send message if client is connected and location is valid
+  if (client.connected() && gps.location.isValid()) {
     switch( count ) {
-      case -1:
-        break;
-      case 0:
-        client.println("start");
-        Serial.println("start");
+      case 0:     // on the first message
+        // send start message
+        client.println("ot");
+        Serial.println("start/ot");
         count++;
         break;
-      case 15:
-        client.println("fin");
-        Serial.println("fin");
-        count = -1;
+      case 15:    // on the last message
+        // send finale message
+        client.println("za");
+        Serial.println("fin/za");
+        count = 0;    // restart count
         break;
-      default:
+      default:    // data messages
         // send data to server
-        client.print(gps.location.lat(), 5);    // 5 decimals of precision
+        client.print(gps.location.lat(), 6);    // 6 decimals of precision
         client.print(",");
-        client.println(gps.location.lng(), 5);
+        client.println(gps.location.lng(), 6);
         // print data to serial monitor
-        Serial.print(gps.location.lat(), 5);    // 5 decimals of precision
+        Serial.print(gps.location.lat(), 6);    // 6 decimals of precision
         Serial.print(",");
-        Serial.println(gps.location.lng(), 5);
+        Serial.println(gps.location.lng(), 6);
         count++;
         break;
     }
   }
-
-  // Close the connection
-  //Serial.println();
-  //Serial.println("closing connection");
-  //client.stop();
-
-  // don't get data continuously, wait one second
-  delay(1000);
   
   smartDelay(500);          // Run Procedure smartDelay
 
@@ -156,6 +155,7 @@ void loop() {
   if (millis() > 5000 && gps.charsProcessed() < 10)
     Serial.println(F("No GPS data received: check wiring"));
 }
+
 
 // Custom version of delay() ensures gps object is being "fed"
 static void smartDelay(unsigned long ms) {              
