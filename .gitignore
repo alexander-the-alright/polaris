@@ -2,4 +2,5 @@
 *.out
 # ignore stored data, saved gps files
 *.gps
-
+# ignore everything to do with processing shit
+trash
